@@ -1,6 +1,6 @@
 # git-graph-js
 
-A TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) by Martin Lange.
+A TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) (v0.7.0) by Martin Lange.
 
 Clear git graphs arranged for your branching model. Renders structured, readable commit graphs in the terminal or as SVG.
 
@@ -110,7 +110,7 @@ const [graphLines, textLines] = printUnicode(graph, settings);
 
 ## Credits
 
-This is a TypeScript port of [git-graph](https://github.com/git-bahn/git-graph), originally written in Rust by [Martin Lange](https://github.com/git-bahn). The original project is licensed under the MIT License.
+This is a TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) (v0.7.0), originally written in Rust by [Martin Lange](https://github.com/git-bahn). The original project is licensed under the MIT License.
 
 ## License
 
