@@ -168,6 +168,7 @@ async function main() {
     .option('-l, --local', 'Show only local branches, no remotes.')
     .option('--svg', 'Render graph as SVG instead of text-based.')
     .option('--svg-file [path]', 'Write SVG to a file. Default: git-graph.svg in repo dir.')
+    .option('--horizontal', 'Render SVG horizontally (left-to-right). Only with --svg/--svg-file.')
     .option('-S, --sparse', 'Print a less compact graph.')
     .option('-d, --debug', 'Additional debug output and graphics.')
     .option(
@@ -219,6 +220,7 @@ async function main() {
     const includeRemote = !options.local;
     const reverseCommitOrder = !!options.reverse;
     const svg = !!options.svg;
+    const horizontal = !!options.horizontal;
     const compact = !options.sparse;
     const debug = !!options.debug;
     const maxCount = parseMaxCount(options.maxCount);
@@ -271,7 +273,7 @@ async function main() {
         : path.resolve(gitDir, 'git-graph.svg'))
       : null;
 
-    await run(gitDir, settings, svg, svgFile, maxCount);
+    await run(gitDir, settings, svg, svgFile, horizontal, maxCount);
   });
 
   await program.parseAsync(process.argv);
@@ -282,6 +284,7 @@ async function run(
   settings: Settings,
   svg: boolean,
   svgFile: string | null,
+  horizontal: boolean,
   maxCount: number | undefined
 ): Promise<void> {
   // Dynamic import to avoid circular deps and allow tree-shaking
@@ -310,7 +313,7 @@ async function run(
 
   if (svg || svgFile) {
     const { printSvg } = await import('./print/svg');
-    const svgContent = printSvg(graph, settings);
+    const svgContent = printSvg(graph, settings, horizontal);
 
     if (svg) {
       console.log(svgContent);

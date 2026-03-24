@@ -57,6 +57,7 @@ git-graph-js --path /path/to/repo
 | `-l, --local` | Show only local branches (no remotes) |
 | `--svg` | Render graph as SVG (stdout) |
 | `--svg-file [path]` | Write SVG to a file (default: `git-graph.svg` in repo dir) |
+| `--horizontal` | Render SVG horizontally (left-to-right). Use with `--svg`/`--svg-file` |
 | `-S, --sparse` | Less compact graph layout |
 | `-d, --debug` | Debug output with timing info |
 | `-w, --wrap [args]` | Line wrapping: `<width>|auto|none [<indent1> [<indent2>]]` |

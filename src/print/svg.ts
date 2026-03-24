@@ -9,18 +9,23 @@ import { getDeviateIndex } from './index';
 
 /**
  * Convert commit index and column to SVG coordinates.
+ * When horizontal is true, axes are swapped (time flows left-to-right).
  */
 export function commitCoord(
   index: number,
-  column: number
+  column: number,
+  horizontal: boolean = false
 ): [number, number] {
-  return [15.0 * (column + 1), 15.0 * (index + 1)];
+  const colCoord = 15.0 * (column + 1);
+  const idxCoord = 15.0 * (index + 1);
+  return horizontal ? [idxCoord, colCoord] : [colCoord, idxCoord];
 }
 
 /**
  * Creates an SVG visual representation of a graph.
+ * When horizontal is true, the graph flows left-to-right instead of top-to-bottom.
  */
-export function printSvg(graph: GitGraph, settings: Settings): string {
+export function printSvg(graph: GitGraph, settings: Settings, horizontal: boolean = false): string {
   const elements: string[] = [];
   const maxIdx = graph.commits.length;
   let maxColumn = 0;
@@ -31,7 +36,7 @@ export function printSvg(graph: GitGraph, settings: Settings): string {
       const [start, end] = branch.range;
       if (start !== null && end !== null) {
         elements.push(
-          svgBoldLine(start, branch.visual.column!, end, branch.visual.column!, 'cyan')
+          svgBoldLine(start, branch.visual.column!, end, branch.visual.column!, 'cyan', horizontal)
         );
       }
     }
@@ -57,7 +62,7 @@ export function printSvg(graph: GitGraph, settings: Settings): string {
       const parIdx = graph.indices.get(parOid);
       if (parIdx === undefined) {
         // Parent outside scope - draw line to bottom
-        elements.push(svgLine(idx, column, maxIdx, column, branchColor));
+        elements.push(svgLine(idx, column, maxIdx, column, branchColor, horizontal));
         continue;
       }
 
@@ -68,7 +73,7 @@ export function printSvg(graph: GitGraph, settings: Settings): string {
 
       if (branch.visual.column === parBranch.visual.column) {
         elements.push(
-          svgLine(idx, column, parIdx, parBranch.visual.column!, color)
+          svgLine(idx, column, parIdx, parBranch.visual.column!, color, horizontal)
         );
       } else {
         const splitIndex = getDeviateIndex(graph, idx, parIdx);
@@ -79,18 +84,19 @@ export function printSvg(graph: GitGraph, settings: Settings): string {
             parIdx,
             parBranch.visual.column!,
             splitIndex,
-            color
+            color,
+            horizontal
           )
         );
       }
     }
 
     elements.push(
-      svgCommitDot(idx, column, branchColor, !info.isMerge)
+      svgCommitDot(idx, column, branchColor, !info.isMerge, horizontal)
     );
   }
 
-  const [xMax, yMax] = commitCoord(maxIdx + 1, maxColumn + 1);
+  const [xMax, yMax] = commitCoord(maxIdx + 1, maxColumn + 1, horizontal);
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${xMax} ${yMax}" width="${xMax}" height="${yMax}">`,
@@ -103,9 +109,10 @@ function svgCommitDot(
   index: number,
   column: number,
   color: string,
-  filled: boolean
+  filled: boolean,
+  horizontal: boolean = false
 ): string {
-  const [x, y] = commitCoord(index, column);
+  const [x, y] = commitCoord(index, column, horizontal);
   return `<circle cx="${x}" cy="${y}" r="4" fill="${filled ? color : 'white'}" stroke="${color}" stroke-width="1"/>`;
 }
 
@@ -114,10 +121,11 @@ function svgLine(
   column1: number,
   index2: number,
   column2: number,
-  color: string
+  color: string,
+  horizontal: boolean = false
 ): string {
-  const [x1, y1] = commitCoord(index1, column1);
-  const [x2, y2] = commitCoord(index2, column2);
+  const [x1, y1] = commitCoord(index1, column1, horizontal);
+  const [x2, y2] = commitCoord(index2, column2, horizontal);
   return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1"/>`;
 }
 
@@ -126,10 +134,11 @@ function svgBoldLine(
   column1: number,
   index2: number,
   column2: number,
-  color: string
+  color: string,
+  horizontal: boolean = false
 ): string {
-  const [x1, y1] = commitCoord(index1, column1);
-  const [x2, y2] = commitCoord(index2, column2);
+  const [x1, y1] = commitCoord(index1, column1, horizontal);
+  const [x2, y2] = commitCoord(index2, column2, horizontal);
   return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="5"/>`;
 }
 
@@ -139,12 +148,13 @@ function svgPath(
   index2: number,
   column2: number,
   splitIdx: number,
-  color: string
+  color: string,
+  horizontal: boolean = false
 ): string {
-  const c0 = commitCoord(index1, column1);
-  const c1 = commitCoord(splitIdx, column1);
-  const c2 = commitCoord(splitIdx + 1, column2);
-  const c3 = commitCoord(index2, column2);
+  const c0 = commitCoord(index1, column1, horizontal);
+  const c1 = commitCoord(splitIdx, column1, horizontal);
+  const c2 = commitCoord(splitIdx + 1, column2, horizontal);
+  const c3 = commitCoord(index2, column2, horizontal);
 
   const m: [number, number] = [
     0.5 * (c1[0] + c2[0]),
