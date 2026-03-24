@@ -55,7 +55,8 @@ git-graph-js --path /path/to/repo
 | `-s, --style <style>` | Graph style: `normal`, `round`, `bold`, `double`, `ascii` |
 | `-r, --reverse` | Reverse the order of commits |
 | `-l, --local` | Show only local branches (no remotes) |
-| `--svg` | Render graph as SVG |
+| `--svg` | Render graph as SVG (stdout) |
+| `--svg-file [path]` | Write SVG to a file (default: `git-graph.svg` in repo dir) |
 | `-S, --sparse` | Less compact graph layout |
 | `-d, --debug` | Debug output with timing info |
 | `-w, --wrap [args]` | Line wrapping: `<width>|auto|none [<indent1> [<indent2>]]` |

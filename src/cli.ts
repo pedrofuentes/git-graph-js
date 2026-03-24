@@ -167,6 +167,7 @@ async function main() {
     .option('-r, --reverse', 'Reverse the order of commits.')
     .option('-l, --local', 'Show only local branches, no remotes.')
     .option('--svg', 'Render graph as SVG instead of text-based.')
+    .option('--svg-file [path]', 'Write SVG to a file. Default: git-graph.svg in repo dir.')
     .option('-S, --sparse', 'Print a less compact graph.')
     .option('-d, --debug', 'Additional debug output and graphics.')
     .option(
@@ -264,7 +265,13 @@ async function main() {
       mergePatterns: MergePatterns.default(),
     };
 
-    await run(gitDir, settings, svg, maxCount);
+    const svgFile = options.svgFile !== undefined
+      ? (typeof options.svgFile === 'string'
+        ? options.svgFile
+        : path.resolve(gitDir, 'git-graph.svg'))
+      : null;
+
+    await run(gitDir, settings, svg, svgFile, maxCount);
   });
 
   await program.parseAsync(process.argv);
@@ -274,6 +281,7 @@ async function run(
   gitDir: string,
   settings: Settings,
   svg: boolean,
+  svgFile: string | null,
   maxCount: number | undefined
 ): Promise<void> {
   // Dynamic import to avoid circular deps and allow tree-shaking
@@ -300,9 +308,18 @@ async function run(
 
   const now2 = performance.now();
 
-  if (svg) {
+  if (svg || svgFile) {
     const { printSvg } = await import('./print/svg');
-    console.log(printSvg(graph, settings));
+    const svgContent = printSvg(graph, settings);
+
+    if (svg) {
+      console.log(svgContent);
+    }
+
+    if (svgFile) {
+      nodeFs.writeFileSync(svgFile, svgContent, 'utf-8');
+      process.stderr.write(`SVG written to ${svgFile}\n`);
+    }
   } else {
     const { printUnicode } = await import('./print/unicode');
     const [gLines, tLines] = printUnicode(graph, settings);
