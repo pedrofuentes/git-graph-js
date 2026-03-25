@@ -1,6 +1,6 @@
 {
   "name": "git-network-graph",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command line tool to show clear git graphs arranged for your branching model. TypeScript port of git-graph v0.7.0 by Martin Lange.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
