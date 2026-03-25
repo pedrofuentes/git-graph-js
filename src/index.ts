@@ -1,12 +1,13 @@
 /**
- * git-graph-js - Command line tool to show clear git graphs arranged for your branching model.
+ * git-network-graph - Command line tool to show clear git graphs arranged for your branching model.
  *
  * Library entry point.
  * Port of lib.rs
  */
 
 // Core types and graph construction
-export { GitGraph, CommitInfo, BranchInfo, BranchVis, HeadInfo, createGitGraph, parseMergeSummary, branchOrder, branchColor, assignChildren, assignBranchColumns } from './graph';
+export { GitGraph, CommitInfo, BranchInfo, BranchVis, HeadInfo, createGitGraph, createGitGraphFromData, parseMergeSummary, branchOrder, branchColor, assignChildren, assignBranchColumns } from './graph';
+export type { FS, RawCommit, RawBranch, RawTag, RawGraphInput } from './graph';
 
 // Settings and configuration types
 export {

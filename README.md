@@ -1,4 +1,4 @@
-# git-graph-js
+# git-network-graph
 
 A TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) (v0.7.0) by Martin Lange.
 
@@ -7,13 +7,13 @@ Clear git graphs arranged for your branching model. Renders structured, readable
 ## Installation
 
 ```bash
-npm install -g git-graph-js
+npm install -g git-network-graph
 ```
 
 Or run directly with npx:
 
 ```bash
-npx git-graph-js
+npx git-network-graph
 ```
 
 ## Usage
@@ -21,13 +21,13 @@ npx git-graph-js
 Run inside any git repository:
 
 ```bash
-git-graph-js
+git-network-graph
 ```
 
 Or point to a repo:
 
 ```bash
-git-graph-js --path /path/to/repo
+git-network-graph --path /path/to/repo
 ```
 
 ### Example output
@@ -47,7 +47,8 @@ git-graph-js --path /path/to/repo
 
 | Option | Description |
 |--------|-------------|
-| `--path <dir>` | Path to git repository (default: current directory) |
+| `-p, --path <dir>` | Path to git repository (default: current directory) |
+| `-m, --model <model>` | Branching model: `simple`, `git-flow`, `none`, or a custom model name |
 | `-n, --max-count <n>` | Maximum number of commits to show |
 | `-f, --format <fmt>` | Commit format: `oneline`, `short`, `medium`, `full`, or custom `"<string>"` |
 | `--color <mode>` | Color mode: `auto`, `always`, `never` |
@@ -69,13 +70,13 @@ Configure branch display order, colors, and persistence:
 
 ```bash
 # List available models
-git-graph-js model list
+git-network-graph model --list
 
 # Set a model for the current repo
-git-graph-js model set <name>
+git-network-graph model <name>
 
 # Show current model
-git-graph-js model get
+git-network-graph model
 ```
 
 ### Custom Format Strings
@@ -83,7 +84,7 @@ git-graph-js model get
 Use `%` placeholders in custom format strings:
 
 ```bash
-git-graph-js -f "%h %s (%an)"
+git-network-graph -f "%h %s (%an)"
 ```
 
 | Placeholder | Description |
@@ -103,13 +104,91 @@ git-graph-js -f "%h %s (%an)"
 
 ## Library Usage
 
+Use git-network-graph as a library to render graphs programmatically:
+
+```bash
+npm install git-network-graph
+```
+
+### From a git repository
+
 ```typescript
-import { createGitGraph } from 'git-graph-js';
-import { printUnicode } from 'git-graph-js/print/unicode';
+import * as fs from 'fs';
+import { createGitGraph, printUnicode, Characters, BranchSettings, BranchSettingsDef, MergePatterns } from 'git-network-graph';
+import type { Settings } from 'git-network-graph';
+
+const settings: Settings = {
+  reverseCommitOrder: false,
+  debug: false,
+  compact: true,
+  colored: true,
+  includeRemote: true,
+  format: { type: 'OneLine' },
+  wrapping: null,
+  characters: Characters.thin(),
+  branchOrder: { type: 'ShortestFirst', forward: true },
+  branches: BranchSettings.from(BranchSettingsDef.gitFlow()),
+  mergePatterns: MergePatterns.default(),
+};
 
 const graph = await createGitGraph('/path/to/repo', fs, settings);
 const [graphLines, textLines] = printUnicode(graph, settings);
+graphLines.forEach((g, i) => console.log(` ${g}  ${textLines[i]}`));
 ```
+
+### From raw data (no git repo needed)
+
+You can also build graphs from raw commit data — useful for APIs, databases, or custom data sources:
+
+```typescript
+import { createGitGraphFromData, printUnicode, printSvg, Characters, BranchSettings, BranchSettingsDef, MergePatterns } from 'git-network-graph';
+import type { RawGraphInput, Settings } from 'git-network-graph';
+
+const settings: Settings = {
+  reverseCommitOrder: false,
+  debug: false,
+  compact: true,
+  colored: true,
+  includeRemote: false,
+  format: { type: 'OneLine' },
+  wrapping: null,
+  characters: Characters.thin(),
+  branchOrder: { type: 'ShortestFirst', forward: true },
+  branches: BranchSettings.from(BranchSettingsDef.gitFlow()),
+  mergePatterns: MergePatterns.default(),
+};
+
+const input: RawGraphInput = {
+  head: { oid: 'abc123', name: 'main', isBranch: true },
+  commits: [
+    {
+      oid: 'abc123',
+      parentOids: ['def456'],
+      message: 'Latest commit',
+      author: { name: 'Alice', email: 'alice@example.com', timestamp: 1700000000, timezoneOffset: 0 },
+      committer: { name: 'Alice', email: 'alice@example.com', timestamp: 1700000000, timezoneOffset: 0 },
+    },
+    {
+      oid: 'def456',
+      parentOids: [],
+      message: 'Initial commit',
+      author: { name: 'Alice', email: 'alice@example.com', timestamp: 1699999000, timezoneOffset: 0 },
+      committer: { name: 'Alice', email: 'alice@example.com', timestamp: 1699999000, timezoneOffset: 0 },
+    },
+  ],
+  branches: [{ name: 'main', oid: 'abc123' }],
+  tags: [{ name: 'v1.0', oid: 'def456' }],
+};
+
+// Render as terminal text
+const graph = createGitGraphFromData(input, settings);
+const [graphLines, textLines] = printUnicode(graph, settings);
+
+// Or render as SVG
+const svgContent = printSvg(graph, settings, false); // false = vertical, true = horizontal
+```
+
+Commits should be in newest-first order (by committer timestamp). The `author` and `committer` fields are optional but recommended for full formatting support.
 
 ## Credits
 

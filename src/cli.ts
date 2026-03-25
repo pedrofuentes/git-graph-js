@@ -138,17 +138,17 @@ async function main() {
   const program = new Command();
 
   program
-    .name('git-graph-js')
+    .name('git-network-graph')
     .description(
       'Structured Git graphs for your branching model.\n' +
         '    https://github.com/git-bahn/git-graph\n\n' +
         'EXAMPLES:\n' +
-        '    git-graph-js                   -> Show graph\n' +
-        '    git-graph-js --style round     -> Show graph in a different style\n' +
-        '    git-graph-js --model <model>   -> Show graph using a certain <model>\n' +
-        '    git-graph-js model --list      -> List available branching models\n' +
-        '    git-graph-js model             -> Show repo\'s current branching models\n' +
-        '    git-graph-js model <model>     -> Permanently set model <model> for this repo'
+        '    git-network-graph                   -> Show graph\n' +
+        '    git-network-graph --style round     -> Show graph in a different style\n' +
+        '    git-network-graph --model <model>   -> Show graph using a certain <model>\n' +
+        '    git-network-graph model --list      -> List available branching models\n' +
+        '    git-network-graph model             -> Show repo\'s current branching models\n' +
+        '    git-network-graph model <model>     -> Permanently set model <model> for this repo'
     )
     .option('-p, --path <path>', 'Open repository from this path or above. Default "."')
     .option('-m, --model <model>', 'Branching model. Available presets are [simple|git-flow|none].')

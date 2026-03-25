@@ -303,7 +303,7 @@ function makeBranchInfo(
 // Git-dependent helpers (isomorphic-git)
 // ---------------------------------------------------------------------------
 
-type FS = {
+export type FS = {
   promises: {
     readFile: (...args: any[]) => Promise<any>;
     writeFile: (...args: any[]) => Promise<any>;
@@ -614,6 +614,301 @@ function assignSourcesTargets(
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// createGitGraphFromData — build graph from raw data (no git repo needed)
+// ---------------------------------------------------------------------------
+
+/**
+ * Raw commit data for building a graph without a git repository.
+ */
+export interface RawCommit {
+  oid: string;
+  parentOids: string[];
+  message: string;
+  author?: { name: string; email: string; timestamp: number; timezoneOffset: number };
+  committer?: { name: string; email: string; timestamp: number; timezoneOffset: number };
+}
+
+/**
+ * Raw branch reference for building a graph without a git repository.
+ */
+export interface RawBranch {
+  name: string;
+  /** Tip commit OID */
+  oid: string;
+  isRemote?: boolean;
+}
+
+/**
+ * Raw tag reference for building a graph without a git repository.
+ */
+export interface RawTag {
+  name: string;
+  /** Peeled commit OID (not the tag object OID) */
+  oid: string;
+}
+
+/**
+ * Input data for createGitGraphFromData.
+ * Commits should be in newest-first order (by committer timestamp).
+ */
+export interface RawGraphInput {
+  head: HeadInfo;
+  commits: RawCommit[];
+  branches: RawBranch[];
+  tags?: RawTag[];
+}
+
+/**
+ * Creates a GitGraph from raw commit, branch, and tag data.
+ * Use this when you have commit data from a source other than a git repository
+ * (e.g., JSON, an API, or a database).
+ *
+ * The renderers (printUnicode, printSvg) work identically on graphs created
+ * by this function or by createGitGraph.
+ */
+export function createGitGraphFromData(
+  input: RawGraphInput,
+  settings: Settings,
+): GitGraph {
+  const { head, commits: rawCommits, branches: rawBranches, tags: rawTags } = input;
+
+  // Build CommitInfo[] and indices
+  const commits: CommitInfo[] = [];
+  const indices = new Map<string, number>();
+  const commitMessages = new Map<string, string>();
+
+  for (let i = 0; i < rawCommits.length; i++) {
+    const raw = rawCommits[i];
+    const parentOids = raw.parentOids;
+    const summary = (raw.message ?? '').split('\n')[0];
+    const info: CommitInfo = {
+      oid: raw.oid,
+      isMerge: parentOids.length > 1,
+      parents: [parentOids[0] ?? null, parentOids[1] ?? null],
+      children: [],
+      branches: [],
+      tags: [],
+      branchTrace: null,
+      data: {
+        oid: raw.oid,
+        summary,
+        parentOids,
+        message: raw.message ?? '',
+        author: {
+          name: raw.author?.name ?? '',
+          email: raw.author?.email ?? '',
+          timestamp: raw.author?.timestamp ?? 0,
+          timezoneOffset: raw.author?.timezoneOffset ?? 0,
+        },
+        committer: {
+          name: raw.committer?.name ?? '',
+          email: raw.committer?.email ?? '',
+          timestamp: raw.committer?.timestamp ?? 0,
+          timezoneOffset: raw.committer?.timezoneOffset ?? 0,
+        },
+      },
+    };
+    commits.push(info);
+    indices.set(raw.oid, i);
+    commitMessages.set(raw.oid, raw.message);
+  }
+
+  // Assign children
+  assignChildren(commits, indices);
+
+  // Build branch infos
+  let counter = 0;
+  const allBranchInfos: BranchInfo[] = [];
+
+  // Actual branches (local + remote)
+  for (const br of rawBranches) {
+    counter += 1;
+    const endIndex = indices.get(br.oid) ?? null;
+    const isRemote = br.isRemote ?? false;
+    const termCol = toTerminalColor(
+      branchColor(
+        br.name,
+        settings.branches.terminalColors,
+        settings.branches.terminalColorsUnknown,
+        counter,
+      ),
+    );
+    const pos = branchOrder(br.name, settings.branches.order);
+    const svgCol = branchColor(
+      br.name,
+      settings.branches.svgColors,
+      settings.branches.svgColorsUnknown,
+      counter,
+    );
+    allBranchInfos.push(
+      makeBranchInfo(
+        br.oid,
+        null,
+        br.name,
+        branchOrder(br.name, settings.branches.persistence),
+        isRemote,
+        false,
+        false,
+        makeBranchVis(pos, termCol, svgCol),
+        endIndex,
+      ),
+    );
+  }
+
+  // Merge branches (from merge commit summaries)
+  for (let idx = 0; idx < commits.length; idx++) {
+    const info = commits[idx];
+    if (!info.isMerge) continue;
+    const message = commitMessages.get(info.oid);
+    if (!message) continue;
+
+    counter += 1;
+    const summary = message.split('\n')[0];
+    const branchName = parseMergeSummary(summary, settings.mergePatterns) ?? 'unknown';
+    const parentOid = info.parents[1];
+    if (parentOid === null) continue;
+
+    const persistence = branchOrder(branchName, settings.branches.persistence);
+    const pos = branchOrder(branchName, settings.branches.order);
+    const termCol = toTerminalColor(
+      branchColor(
+        branchName,
+        settings.branches.terminalColors,
+        settings.branches.terminalColorsUnknown,
+        counter,
+      ),
+    );
+    const svgCol = branchColor(
+      branchName,
+      settings.branches.svgColors,
+      settings.branches.svgColorsUnknown,
+      counter,
+    );
+
+    allBranchInfos.push(
+      makeBranchInfo(
+        parentOid,
+        info.oid,
+        branchName,
+        persistence,
+        false,
+        true,
+        false,
+        makeBranchVis(pos, termCol, svgCol),
+        idx + 1 < commits.length ? idx + 1 : idx,
+      ),
+    );
+  }
+
+  // Tags
+  if (rawTags) {
+    for (const tag of rawTags) {
+      const targetIndex = indices.get(tag.oid);
+      if (targetIndex === undefined) continue;
+
+      counter += 1;
+      const name = `tags/${tag.name}`;
+      const termCol = toTerminalColor(
+        branchColor(
+          name,
+          settings.branches.terminalColors,
+          settings.branches.terminalColorsUnknown,
+          counter,
+        ),
+      );
+      const pos = branchOrder(name, settings.branches.order);
+      const svgCol = branchColor(
+        name,
+        settings.branches.svgColors,
+        settings.branches.svgColorsUnknown,
+        counter,
+      );
+
+      allBranchInfos.push(
+        makeBranchInfo(
+          tag.oid,
+          null,
+          name,
+          settings.branches.persistence.length + 1,
+          false,
+          false,
+          true,
+          makeBranchVis(pos, termCol, svgCol),
+          targetIndex,
+        ),
+      );
+    }
+  }
+
+  // Sort by persistence, then unmerged first
+  allBranchInfos.sort((a, b) => {
+    if (a.persistence !== b.persistence) return a.persistence - b.persistence;
+    return (a.isMerged ? 1 : 0) - (b.isMerged ? 1 : 0);
+  });
+
+  // Assign branches (trace + filter)
+  let allBranches = assignBranches(commits, indices, allBranchInfos);
+
+  // Correct fork merges
+  correctForkMerges(commits, indices, allBranches, settings);
+
+  // Assign sources and targets
+  assignSourcesTargets(commits, indices, allBranches);
+
+  // Determine branch order parameters
+  const shortestFirst = settings.branchOrder.type === 'ShortestFirst';
+  const fwd = settings.branchOrder.forward;
+
+  // Assign branch columns
+  assignBranchColumns(commits, indices, allBranches, settings.branches, shortestFirst, fwd);
+
+  // Filter commits to only those on a branch
+  const filteredCommits = commits.filter(info => info.branchTrace !== null);
+
+  // Create new indices
+  const filteredIndices = new Map<string, number>();
+  filteredCommits.forEach((info, idx) => {
+    filteredIndices.set(info.oid, idx);
+  });
+
+  // Build old-to-new index map
+  const indexMap = new Map<number, number | null>();
+  for (const [oid, oldIndex] of indices) {
+    const newIndex = filteredIndices.get(oid);
+    indexMap.set(oldIndex, newIndex ?? null);
+  }
+
+  // Update branch ranges from old to new indices
+  for (const branch of allBranches) {
+    if (branch.range[0] !== null) {
+      let startIdx = branch.range[0];
+      let newIdx = indexMap.get(startIdx) ?? null;
+      while (newIdx === null && startIdx < commits.length - 1) {
+        startIdx += 1;
+        newIdx = indexMap.get(startIdx) ?? null;
+      }
+      branch.range[0] = newIdx;
+    }
+    if (branch.range[1] !== null) {
+      let endIdx = branch.range[1];
+      let newIdx = indexMap.get(endIdx) ?? null;
+      while (newIdx === null && endIdx > 0) {
+        endIdx -= 1;
+        newIdx = indexMap.get(endIdx) ?? null;
+      }
+      branch.range[1] = newIdx;
+    }
+  }
+
+  return {
+    commits: filteredCommits,
+    indices: filteredIndices,
+    allBranches,
+    head,
+  };
 }
 
 // ---------------------------------------------------------------------------

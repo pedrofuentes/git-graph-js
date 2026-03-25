@@ -34,7 +34,7 @@ TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) (v0.7.0) b
 src/
   cli.ts              # CLI entry point (commander.js)
   config.ts           # TOML branching model config I/O
-  graph.ts            # Core graph construction (isomorphic-git)
+  graph.ts            # Core graph construction (isomorphic-git + raw data)
   index.ts            # Library entry point (re-exports)
   settings.ts         # All types: Settings, BranchSettings, Characters, etc.
   print/
@@ -53,6 +53,7 @@ samples/
   *.svg               # Sample SVG output (generated, not hand-edited)
 tests/
   *.test.ts           # One test file per source module
+  graph-from-data.test.ts  # Tests for createGitGraphFromData
   fixtures/
     arbol-graph.json  # Serialized GitGraph fixture for snapshot tests
     load-graph.ts     # Loader that reconstructs GitGraph from JSON
@@ -67,6 +68,10 @@ tests/
 - **Settings types** live in `settings.ts`. `CommitFormat` is defined there and re-exported by `format.ts`.
 - **TOML config** uses snake_case keys; TypeScript uses camelCase. `config.ts` has conversion helpers.
 - **chalk v4 and wrap-ansi v7** are used because v5+/v8+ are ESM-only and this project is CommonJS.
+- **Two graph construction entry points:**
+  - `createGitGraph(dir, fs, settings)` — reads from a git repo via isomorphic-git
+  - `createGitGraphFromData(input, settings)` — builds from raw data (`RawGraphInput`: commits, branches, tags, head). No git repo or filesystem needed. The renderers (`printUnicode`, `printSvg`) work identically on graphs from either function.
+- **Input types for `createGitGraphFromData`:** `RawCommit`, `RawBranch`, `RawTag`, `RawGraphInput` — all defined in `graph.ts` and re-exported from `index.ts`.
 
 ## SVG Rendering Architecture
 

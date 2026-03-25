@@ -1,17 +1,29 @@
 {
-  "name": "git-graph-js",
+  "name": "git-network-graph",
   "version": "0.1.0",
   "description": "Command line tool to show clear git graphs arranged for your branching model. TypeScript port of git-graph v0.7.0 by Martin Lange.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "git-graph-js": "./dist/cli.js"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
+  "bin": {
+    "git-network-graph": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "git",
@@ -24,15 +36,20 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pedrofuentes/git-graph-js.git"
+    "url": "https://github.com/pedrofuentes/git-network-graph.git"
   },
-  "homepage": "https://github.com/pedrofuentes/git-graph-js",
+  "homepage": "https://github.com/pedrofuentes/git-network-graph",
+  "bugs": {
+    "url": "https://github.com/pedrofuentes/git-network-graph/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "type": "commonjs",
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^14.0.3",
     "date-fns": "^4.1.0",
-    "env-paths": "^4.0.0",
     "isomorphic-git": "^1.37.4",
     "smol-toml": "^1.6.1",
     "wrap-ansi": "^7.0.0"

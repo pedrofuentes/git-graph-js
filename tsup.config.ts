@@ -6,12 +6,8 @@ export default defineConfig({
     cli: 'src/cli.ts',
   },
   format: ['cjs'],
-  dts: false,
+  dts: true,
   sourcemap: true,
   clean: true,
   target: 'node18',
-  banner({ format }) {
-    // Only add shebang for cli entry
-    return {};
-  },
 });
