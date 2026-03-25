@@ -24,9 +24,21 @@ TypeScript port of [git-graph](https://github.com/git-bahn/git-graph) (v0.7.0) b
 ## Commands
 
 - `npm test` — run all tests (vitest)
-- `npm run build` — build to `dist/` (tsup)
+- `npm run build` — build to `dist/` (tsup, with type declarations)
 - `npm run dev` — run CLI in dev mode (tsx)
 - `npx tsc --noEmit` — type-check without emitting
+
+## Publishing
+
+The package is published as **`git-network-graph`** on npm.
+
+- **CI**: `.github/workflows/ci.yml` runs on every push/PR to `main` (Node 18/20/22 matrix: install, build, test, type-check)
+- **Publishing**: `.github/workflows/publish.yml` uses **OIDC Trusted Publishing** — no `NPM_TOKEN` secret needed
+- **To release a new version**:
+  1. Bump `version` in `package.json`
+  2. Create a GitHub Release → the workflow auto-publishes to npm
+
+> **Note**: The npm package name is `git-network-graph` and the CLI command is `git-network-graph`, but config files (`git-graph.toml`, `git-graph.svg`, app config directory) keep the `git-graph` prefix for upstream compatibility.
 
 ## Project Structure
 
