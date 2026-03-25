@@ -13,7 +13,13 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "keywords": ["git", "graph", "cli", "terminal", "visualization"],
+  "keywords": [
+    "git",
+    "graph",
+    "cli",
+    "terminal",
+    "visualization"
+  ],
   "author": "Pedro Fuentes",
   "license": "MIT",
   "repository": {
@@ -33,6 +39,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "subset-font": "^2.4.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",

@@ -97,6 +97,10 @@ export class Grid {
       rows.push(this.data.slice(start, start + this.width));
     }
     rows.reverse();
+    // Also reverse cells within each row (horizontal mirror)
+    for (const row of rows) {
+      row.reverse();
+    }
     this.data = rows.flat();
   }
 }
@@ -598,6 +602,13 @@ export function formatBranches(
 
 export type UnicodeGraphInfo = [string[], string[], number[]];
 
+/** Raw grid data before stringification. */
+export interface UnicodeGridResult {
+  grid: Grid;
+  textLines: (string | null)[];
+  indexMap: number[];
+}
+
 // Find insert index for a specific connection
 function findInsertIdx(
   inserts: Occ[][],
@@ -614,14 +625,14 @@ function findInsertIdx(
   return null;
 }
 
-// ---- printUnicode (main entry point, using actual graph types) ----
+// ---- buildUnicodeGrid (builds the raw grid, used by both printUnicode and printSvg) ----
 
-export function printUnicode(
+export function buildUnicodeGrid(
   graph: ActualGitGraph,
   settings: Settings
-): UnicodeGraphInfo {
+): UnicodeGridResult | null {
   if (graph.allBranches.length === 0) {
-    return [[], [], []];
+    return null;
   }
 
   // 1. Calculate dimensions
@@ -771,7 +782,21 @@ export function printUnicode(
     grid.reverse();
   }
 
-  // 6. Render
+  return { grid, textLines, indexMap };
+}
+
+// ---- printUnicode (main entry point, using actual graph types) ----
+
+export function printUnicode(
+  graph: ActualGitGraph,
+  settings: Settings
+): UnicodeGraphInfo {
+  const result = buildUnicodeGrid(graph, settings);
+  if (!result) {
+    return [[], [], []];
+  }
+
+  const { grid, textLines, indexMap } = result;
   const [gLines, tLines] = printGraph(settings.characters, grid, textLines, settings.colored);
 
   return [gLines, tLines, indexMap];

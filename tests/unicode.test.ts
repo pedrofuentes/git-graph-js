@@ -90,7 +90,7 @@ describe('Grid', () => {
     expect(grid.getTuple(1, 1)).toEqual([CROSS, 2, 7]);
   });
 
-  it('reverse flips row order', () => {
+  it('reverse flips row order and mirrors columns', () => {
     const grid = makeGrid(2, 3);
     // Row 0
     grid.set(0, 0, DOT, 1, 1);
@@ -104,15 +104,15 @@ describe('Grid', () => {
 
     grid.reverse();
 
-    // Former row 2 is now row 0
-    expect(grid.getTuple(0, 0)).toEqual([CROSS, 5, 5]);
-    expect(grid.getTuple(1, 0)).toEqual([R_U, 6, 6]);
-    // Former row 1 stays row 1
-    expect(grid.getTuple(0, 1)).toEqual([VER, 3, 3]);
-    expect(grid.getTuple(1, 1)).toEqual([HOR, 4, 4]);
-    // Former row 0 is now row 2
-    expect(grid.getTuple(0, 2)).toEqual([DOT, 1, 1]);
-    expect(grid.getTuple(1, 2)).toEqual([CIRCLE, 2, 2]);
+    // Former row 2 is now row 0, columns mirrored
+    expect(grid.getTuple(0, 0)).toEqual([R_U, 6, 6]);
+    expect(grid.getTuple(1, 0)).toEqual([CROSS, 5, 5]);
+    // Former row 1 stays row 1, columns mirrored
+    expect(grid.getTuple(0, 1)).toEqual([HOR, 4, 4]);
+    expect(grid.getTuple(1, 1)).toEqual([VER, 3, 3]);
+    // Former row 0 is now row 2, columns mirrored
+    expect(grid.getTuple(0, 2)).toEqual([CIRCLE, 2, 2]);
+    expect(grid.getTuple(1, 2)).toEqual([DOT, 1, 1]);
   });
 });
 
