@@ -11,7 +11,7 @@
     }
   },
   "bin": {
-    "git-network-graph": "./dist/cli.js"
+    "git-network-graph": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -39,7 +39,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pedrofuentes/git-network-graph.git"
+    "url": "git+https://github.com/pedrofuentes/git-network-graph.git"
   },
   "homepage": "https://github.com/pedrofuentes/git-network-graph",
   "bugs": {
